@@ -42,4 +42,5 @@ void main(int argc, char* argv[] ){
     openRom(cp, filename);
 
     printProgram(cp, 144);
+    printMultipleInstructions(cp, 20);
 }

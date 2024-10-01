@@ -66,7 +66,15 @@ void initialize(Chip8* cp, char* font){
 
 
 
-void emulateCycle(Chip8* cp); 
+// void emulateCycle(Chip8* cp){
+//     cp->opcode = cp->memory[cp->PC] << 8 | cp->memory[cp->PC+1];
+
+//     switch(cp->opcode & 0xF000){
+//         case 0xA000:
+
+//     }
+// }
+
 /*
     fetch opcode
         fetching opcode involves taking one opcode from the memory at the location specified by the program counter. since one opcode is 2 bytes, we need to fetch 2 successive elements to get an actual opcode. 
