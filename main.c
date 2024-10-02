@@ -1,6 +1,7 @@
 #include "chip8.h"
 #include "debugging.h"
 #include "utils.h"
+#include "graphics.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,23 +32,44 @@ unsigned char font[80] =
 
 void main(int argc, char* argv[] ){
     unsigned char filename[100];
-    
+    Chip8* cp;
+    SDLapp* app;    
+
     strcpy(filename, argv[1]);
     printf("loading %s rom\n", filename);
     
-    Chip8* cp;
     cp = (Chip8*)malloc(sizeof(Chip8));
+    app = (SDLapp*)malloc(sizeof(SDLapp));
     
     initialize(cp, font);
     openRom(cp, filename);
 
-    printProgram(cp, 144);
-    // printMultipleInstructions(cp, 20);
-    for (;;){
-        
-        emulateCycle(cp);
-        updateTimers(cp);
-        nextOpCode(cp);
-        sleep(2);
+    setUpGraphics(app);
+
+    // printProgram(cp, 36);
+
+    int quit = 0;
+    cp->PC -= 2;
+
+    SDL_Event e;
+
+    while (!quit){
+
+        while (SDL_PollEvent(&e) != 0){
+            if (e.type == SDL_QUIT){
+                quit = 1;
+            }
+        }
+
     }
+
+    // printMultipleInstructions(cp, 50);
+
+    // for (;;){
+        
+    //     nextOpCode(cp);
+    //     emulateCycle(cp, app);
+    //     updateTimers(cp);
+    //     sleep(2);
+    // }
 }

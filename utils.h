@@ -5,7 +5,7 @@
 #include "chip8.h"
 
 
-void openRom(Chip8* cp, char filename[100]){
+int openRom(Chip8* cp, char filename[100]){
     unsigned char buff;
     FILE* ptr;
 

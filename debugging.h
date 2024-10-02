@@ -140,6 +140,7 @@ void printInstruction(Chip8* cp){
                     break;
 
             }
+            break;
 
         default:
             printf ("Unknown opcode\n");
@@ -149,7 +150,7 @@ void printInstruction(Chip8* cp){
 
 void printMultipleInstructions(Chip8* cp, int count){
     printf("\n===========Instructions==========\n");
-    for (int i = 0x0200; i < 0x0200+count*2; i=i+2){
+    for (int i = cp->PC; i < 0x0200+count*2; i=i+2){
         cp->PC = i;
         printInstruction(cp);
     }

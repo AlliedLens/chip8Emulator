@@ -10,6 +10,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "graphics.h"
+
 
 /*
 The systems memory map: 
@@ -30,13 +32,14 @@ typedef struct Chip8{
 
     unsigned short PC; //program counter has the address of the next variable
 
-    unsigned char gfx[SCREEN_HEIGHT* SCREEN_WIDTH]; // screen has 2048 pixels with height 64 and width 32
+    unsigned char gfx[SCREEN_HEIGHT][SCREEN_WIDTH]; // screen has 2048 pixels with height 64 and width 32
 
     unsigned char delay_timer; //timer registers count at 60hz and when set above zero they will count down to zero 
     unsigned char sound_timer; //sound timer hits a buzzer when it reaches zero
 
     unsigned short call_stack[CALL_DEPTH]; //anytime a jump or subroutine is called its important to remember the memory address of the previous instruction, so a call stack is defined 
     unsigned short stack_pointer;
+    unsigned int draw_flag;
 
     unsigned char keypad[KEYPAD_CHARS];
 
@@ -57,18 +60,19 @@ void initialize(Chip8* cp, char* font){
         cp->V[i] = 0x00;
     }
 
-    //load fonts
-    for (int i = 0; i < 80;i++ ){
-        cp->memory[i] = font[i];
-    }
-
+    cp->draw_flag = 0;
+    
+    memset(cp->memory, 0, sizeof(cp->memory));
+    memset(cp->call_stack, 0, sizeof(cp->call_stack));
+    memset(cp->V, 0, sizeof(cp->V));
+    memcpy(cp->memory, font, sizeof(font));
     
     printf("Chip8 initialized...\n");
 } 
 
 
 
-void emulateCycle(Chip8* cp){
+void emulateCycle(Chip8* cp, SDLapp* app){
     cp->opcode = cp->memory[cp->PC] << 8 | cp->memory[cp->PC+1];
     printf("address: 0x%x opcode: 0x%x \n", cp->PC, cp->opcode);
     int arithmetic_operation = cp->opcode & 0x000F;
