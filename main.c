@@ -2,14 +2,16 @@
 #include "debugging.h"
 #include "utils.h"
 #include "graphics.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#define REFRESH_RATE 3
 
-unsigned char font[80] =
-{
+
+unsigned char font[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
     0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -28,8 +30,6 @@ unsigned char font[80] =
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-
-
 void main(int argc, char* argv[] ){
     unsigned char filename[100];
     Chip8* cp;
@@ -41,15 +41,14 @@ void main(int argc, char* argv[] ){
     cp = (Chip8*)malloc(sizeof(Chip8));
     app = (SDLapp*)malloc(sizeof(SDLapp));
     
-    initialize(cp, font);
+    initialize(cp, font, app);
     openRom(cp, filename);
 
     setUpGraphics(app);
 
-    // printProgram(cp, 36);
+    printProgram(cp, 36);
 
     int quit = 0;
-    cp->PC -= 2;
 
     SDL_Event e;
 
@@ -61,15 +60,13 @@ void main(int argc, char* argv[] ){
             }
         }
 
+        emulateCycle(cp, app);
+        updateTimers(cp);
+        SDL_RenderPresent(app->renderer);
+        SDL_Delay(1000/REFRESH_RATE);    
     }
 
     // printMultipleInstructions(cp, 50);
-
-    // for (;;){
-        
-    //     nextOpCode(cp);
-    //     emulateCycle(cp, app);
-    //     updateTimers(cp);
-    //     sleep(2);
+    // for (;;){        
     // }
 }

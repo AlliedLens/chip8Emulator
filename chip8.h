@@ -1,9 +1,11 @@
 #define MEM_SIZE 4096
 #define REG_SIZE 16
-#define SCREEN_HEIGHT 64
-#define SCREEN_WIDTH 32
+#define SCREEN_WIDTH 64 * 8
+#define SCREEN_HEIGHT 32 * 8
 #define CALL_DEPTH 16
 #define KEYPAD_CHARS 16
+
+
 
 #ifndef CHIP8_H
 #define CHIP8_H
@@ -11,14 +13,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "graphics.h"
+#include <SDL2/SDL.h>
 
 
 /*
+
 The systems memory map: 
 
 0x000-0x1FF - Chip 8 interpreter (contains font set in emu)
 0x050-0x0A0 - Used for the built in 4x5 pixel font set (0-F)
 0x200-0xFFF - Program ROM and work RAM
+
+Keypad                   Keyboard
++-+-+-+-+                +-+-+-+-+
+|1|2|3|C|                |1|2|3|4|
++-+-+-+-+                +-+-+-+-+
+|4|5|6|D|                |Q|W|E|R|
++-+-+-+-+       =>       +-+-+-+-+
+|7|8|9|E|                |A|S|D|F|
++-+-+-+-+                +-+-+-+-+
+|A|0|B|F|                |Z|X|C|V|
++-+-+-+-+                +-+-+-+-+
+
 
 */
 
@@ -32,7 +48,7 @@ typedef struct Chip8{
 
     unsigned short PC; //program counter has the address of the next variable
 
-    unsigned char gfx[SCREEN_HEIGHT][SCREEN_WIDTH]; // screen has 2048 pixels with height 64 and width 32
+    unsigned char gfx[SCREEN_HEIGHT*8][SCREEN_WIDTH*8]; // screen has 2048 pixels with height 64 and width 32
 
     unsigned char delay_timer; //timer registers count at 60hz and when set above zero they will count down to zero 
     unsigned char sound_timer; //sound timer hits a buzzer when it reaches zero
@@ -45,7 +61,7 @@ typedef struct Chip8{
 
 }Chip8;
 
-void initialize(Chip8* cp, char* font){
+void initialize(Chip8* cp, char* font, SDLapp* app){
     //initializes register and memory once
 
     cp->PC = 0x200;
@@ -54,6 +70,8 @@ void initialize(Chip8* cp, char* font){
     cp->stack_pointer = 0x00;
 
     //clear display
+    SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 255);
+    SDL_RenderClear(app->renderer);
 
     //clear registers
     for (int i = 0; i < 16; i++){
@@ -70,31 +88,49 @@ void initialize(Chip8* cp, char* font){
     printf("Chip8 initialized...\n");
 } 
 
-
-
+void drawPixel(SDLapp* app, char x, char y)
+{
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {	
+            SDL_RenderDrawPoint(app->renderer, (x * 8) + i , (y * 8) + j);
+        }
+    }	
+}
 void emulateCycle(Chip8* cp, SDLapp* app){
     cp->opcode = cp->memory[cp->PC] << 8 | cp->memory[cp->PC+1];
     printf("address: 0x%x opcode: 0x%x \n", cp->PC, cp->opcode);
     int arithmetic_operation = cp->opcode & 0x000F;
     int ef_operation = cp->opcode & 0x00FF;
     
-    int Xreg = (cp->opcode&0x0F00)>>8;
-    int Yreg = (cp->opcode&0x0F00)>>4;
-    int NN = cp->opcode&0x00FF;
-    int NNN = cp->opcode&0x0FFF;
+    char Xreg = (cp->opcode&0x0F00)>>8;
+    char Yreg = (cp->opcode&0x0F00)>>4;
+    
+    char N = cp->opcode&0x000F;
+    char NN = cp->opcode&0x00FF;
+    char NNN = cp->opcode&0x0FFF;
+    
+    char pixel;
+
+    char x;
+    char y;    
+
     
     switch(cp->opcode & 0xF000){ 
         case 0x0000:
             switch(cp->opcode)
             {
                 case 0x00E0: //clear the screen       
-                    printf("---need to clear the screen\n");
+                    SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 255);
+                    SDL_RenderClear(app->renderer);
                     break;        
                 case 0x00EE: // exit a subroutine
                     cp->stack_pointer -= 1;
                     cp->PC = cp->call_stack[cp->stack_pointer];
                     break;     
             }
+            cp->PC += 2;
             break;
         case 0x1000: // jump NNN
             cp->PC = NNN;
@@ -108,81 +144,132 @@ void emulateCycle(Chip8* cp, SDLapp* app){
         
         case 0x3000: //Conditional Skip
         
-            if (cp->memory[Xreg] == NN) cp->PC += 2;
+            if (cp->memory[Xreg] == NN){
+                cp->PC += 4;
+            }else{
+                cp->PC += 2;
+            }
 
             break;
         
         case 0x4000: //anotehr conditional skip
-            if (cp->memory[Xreg] != NN) cp->PC += 2;            
+            if (cp->memory[Xreg] != NN){
+                cp->PC += 4;
+            }else{
+                cp->PC += 2;
+            }
             break;
 
         case 0x5000: //conditional skip wtih registers
-            if (cp->memory[Xreg] == cp->memory[Yreg]) cp->PC += 2;
+            if (cp->V[Xreg] == cp->V[Yreg]){
+                cp->PC += 4;  
+            }else{
+                cp->PC += 2;
+            }
             break;
 
         case 0x6000: //assigning values to registers
-            cp->memory[Xreg] = NN;
+            cp->V[Xreg] = NN;
+            cp->PC += 2;
             break;
         
         case 0x7000: // arithmetic opeartions with registers
-            cp->memory[Xreg] += NN;
+            cp->V[Xreg] += NN;
+            cp->PC += 2;
             break;
         
         case 0x8000:
             switch(arithmetic_operation){
                 case 0x0000:
-                    cp->memory[Xreg] = cp->memory[Yreg];
+                    cp->V[Xreg] = cp->V[Yreg];
+                    cp->PC += 2;
                     break;
                 case 0x0001:
-                    cp->memory[Xreg] |= cp->memory[Yreg];
+                    cp->V[Xreg] |= cp->V[Yreg];
+                    cp->PC += 2;
                     break;
                 case 0x0002:
-                    cp->memory[Xreg] &= cp->memory[Yreg];
+                    cp->V[Xreg] &= cp->V[Yreg];
+                    cp->PC += 2;
                     break;
                 case 0x0003:
-                    cp->memory[Xreg] ^= cp->memory[Yreg];
+                    cp->V[Xreg] ^= cp->V[Yreg];
+                    cp->PC += 2;
                     break;
                 case 0x0004:
-                    cp->memory[Xreg] += cp->memory[Yreg];
+                    cp->V[Xreg] += cp->V[Yreg];
+                    cp->PC += 2;
                     break;
                 case 0x0005:
-                    cp->memory[Xreg] -= cp->memory[Yreg];
+                    cp->V[Xreg] -= cp->V[Yreg];
+                    cp->PC += 2;
                     break;
                 case 0x0006:
-                    cp->memory[Xreg] >>= cp->memory[Yreg];
+                    cp->V[Xreg] >>= cp->V[Yreg];
+                    cp->PC += 2;
                     break;
                 case 0x0007:
-                    cp->memory[Xreg] =- cp->memory[Yreg];
+                    cp->V[Xreg] =- cp->V[Yreg];
+                    cp->PC += 2;
                     break;
                 case 0x000E:
-                    cp->memory[Xreg] <<= cp->memory[Yreg];
+                    cp->V[Xreg] <<= cp->V[Yreg];
+                    cp->PC += 2;
                     break;
             }
             break;
         case 0x9000:
-            if (cp->memory[Xreg] != cp->memory[Yreg]) cp->PC += 2;
+            if (cp->V[Xreg] != cp->V[Yreg]) {
+                cp->PC += 4;
+            }else{
+                cp->PC += 2;
+            }
             break;
         case 0xA000:
             cp->I = NNN;
+            cp->PC += 2;
             break;
         case 0xB000:
             cp->PC = NNN + cp->V[0];
             break;
         case 0xC000:
             cp->V[Xreg] = NN&rand();
+            cp->PC += 2;
             break;
         case 0xD000:
             printf("---sprite V%x V%x %x\n", (cp->opcode & 0x0F00)>>8, (cp->opcode & 0x00F0)>>4, cp->opcode & 0x000F);
+            for (int yline =0 ; yline < N; yline++){
+                pixel = cp->memory[cp->I + yline];
+                for (int xline = 0; xline < 8; xline++){
+                    if ( (pixel & (0x80 >> xline)) != 0 ){
+                        if (cp->gfx[Yreg +yline][Xreg + xline] == 1) cp->V[0xF] = 1;
+                        cp->gfx[Yreg+yline][Xreg+xline] ^= 1; 
+                        if (cp->gfx[Yreg+yline][Xreg+xline]){
+                            SDL_SetRenderDrawColor(app->renderer, 255,255,255, 255);
+                            drawPixel(app, Xreg+xline, Yreg+yline );
+                        }else{
+                            SDL_SetRenderDrawColor(app->renderer, 0,0,0,255);
+                            drawPixel(app, Xreg+xline, Yreg+yline);
+                        }
+
+                    }
+                }
+                
+            }
+            cp->draw_flag = 1;
+            cp->PC += 2;
             break;
         case 0xE000:
             switch(ef_operation){
                 case 0x009E:
                     printf("---if V%x -key then\n", (cp->opcode & 0x0F00)>>8);
+                    cp->PC += 2;
                     break;
                 case 0x00A1:
                     printf("---if V%x key then\n", (cp->opcode & 0x0F00)>>8);
+                    cp->PC += 2;
                     break;
-            break;
+                break;
             }
         case 0xF000:
             switch (ef_operation)
@@ -237,9 +324,6 @@ void updateTimers(Chip8* cp){
     cp->sound_timer -= 1;
 }
 
-void nextOpCode(Chip8* cp){
-    cp->PC += 2;
-}
 
 /*
     fetch opcode

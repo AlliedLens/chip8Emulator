@@ -156,3 +156,8 @@ void printMultipleInstructions(Chip8* cp, int count){
     }
     printf("\n=====================================\n");
 }
+
+
+void debug1NNN(Chip8* cp){
+    printf("");
+}
