@@ -4,10 +4,12 @@
 #define SCREEN_WIDTH 32
 #define CALL_DEPTH 16
 #define KEYPAD_CHARS 16
-#include <stdio.h>
 
 #ifndef CHIP8_H
 #define CHIP8_H
+
+#include <stdio.h>
+#include <stdlib.h>
 
 /*
 The systems memory map: 
@@ -66,14 +68,174 @@ void initialize(Chip8* cp, char* font){
 
 
 
-// void emulateCycle(Chip8* cp){
-//     cp->opcode = cp->memory[cp->PC] << 8 | cp->memory[cp->PC+1];
+void emulateCycle(Chip8* cp){
+    cp->opcode = cp->memory[cp->PC] << 8 | cp->memory[cp->PC+1];
+    printf("address: 0x%x opcode: 0x%x \n", cp->PC, cp->opcode);
+    int arithmetic_operation = cp->opcode & 0x000F;
+    int ef_operation = cp->opcode & 0x00FF;
+    
+    int Xreg = (cp->opcode&0x0F00)>>8;
+    int Yreg = (cp->opcode&0x0F00)>>4;
+    int NN = cp->opcode&0x00FF;
+    int NNN = cp->opcode&0x0FFF;
+    
+    switch(cp->opcode & 0xF000){ 
+        case 0x0000:
+            switch(cp->opcode)
+            {
+                case 0x00E0: //clear the screen       
+                    printf("---need to clear the screen\n");
+                    break;        
+                case 0x00EE: // exit a subroutine
+                    cp->stack_pointer -= 1;
+                    cp->PC = cp->call_stack[cp->stack_pointer];
+                    break;     
+            }
+            break;
+        case 0x1000: // jump NNN
+            cp->PC = NNN;
+            break;
+        
+        case 0x2000: // call subroutine
+            cp->call_stack[cp->stack_pointer] = cp->PC;
+            cp->stack_pointer += 1;
+            cp->PC = NNN;
+            break;
+        
+        case 0x3000: //Conditional Skip
+        
+            if (cp->memory[Xreg] == NN) cp->PC += 2;
 
-//     switch(cp->opcode & 0xF000){
-//         case 0xA000:
+            break;
+        
+        case 0x4000: //anotehr conditional skip
+            if (cp->memory[Xreg] != NN) cp->PC += 2;            
+            break;
 
-//     }
-// }
+        case 0x5000: //conditional skip wtih registers
+            if (cp->memory[Xreg] == cp->memory[Yreg]) cp->PC += 2;
+            break;
+
+        case 0x6000: //assigning values to registers
+            cp->memory[Xreg] = NN;
+            break;
+        
+        case 0x7000: // arithmetic opeartions with registers
+            cp->memory[Xreg] += NN;
+            break;
+        
+        case 0x8000:
+            switch(arithmetic_operation){
+                case 0x0000:
+                    cp->memory[Xreg] = cp->memory[Yreg];
+                    break;
+                case 0x0001:
+                    cp->memory[Xreg] |= cp->memory[Yreg];
+                    break;
+                case 0x0002:
+                    cp->memory[Xreg] &= cp->memory[Yreg];
+                    break;
+                case 0x0003:
+                    cp->memory[Xreg] ^= cp->memory[Yreg];
+                    break;
+                case 0x0004:
+                    cp->memory[Xreg] += cp->memory[Yreg];
+                    break;
+                case 0x0005:
+                    cp->memory[Xreg] -= cp->memory[Yreg];
+                    break;
+                case 0x0006:
+                    cp->memory[Xreg] >>= cp->memory[Yreg];
+                    break;
+                case 0x0007:
+                    cp->memory[Xreg] =- cp->memory[Yreg];
+                    break;
+                case 0x000E:
+                    cp->memory[Xreg] <<= cp->memory[Yreg];
+                    break;
+            }
+            break;
+        case 0x9000:
+            if (cp->memory[Xreg] != cp->memory[Yreg]) cp->PC += 2;
+            break;
+        case 0xA000:
+            cp->I = NNN;
+            break;
+        case 0xB000:
+            cp->PC = NNN + cp->V[0];
+            break;
+        case 0xC000:
+            cp->V[Xreg] = NN&rand();
+            break;
+        case 0xD000:
+            printf("---sprite V%x V%x %x\n", (cp->opcode & 0x0F00)>>8, (cp->opcode & 0x00F0)>>4, cp->opcode & 0x000F);
+            break;
+        case 0xE000:
+            switch(ef_operation){
+                case 0x009E:
+                    printf("---if V%x -key then\n", (cp->opcode & 0x0F00)>>8);
+                    break;
+                case 0x00A1:
+                    printf("---if V%x key then\n", (cp->opcode & 0x0F00)>>8);
+                    break;
+            break;
+            }
+        case 0xF000:
+            switch (ef_operation)
+            {
+                case 0x0007:
+                    printf("V%x := delay\n", (cp->opcode & 0x0F00)>>8);
+                    cp->V[Xreg] = cp->delay_timer;
+                    break;
+                case 0x000A:
+                    printf("V%x := key \n", (cp->opcode & 0x0F00)>>8);
+                    break;
+                case 0x0015:
+                    cp->delay_timer = cp->V[Xreg];
+                    break;
+                case 0x0018:
+                    cp->sound_timer = cp->V[Xreg];
+                    break;
+                case 0x001E:
+                    cp->I += cp->V[Xreg];
+                    break;
+                case 0x0029:
+
+                    printf("---i := hex V%x \n", (cp->opcode & 0x0F00)>>8);
+                    break;
+                case 0x0033:
+                    cp->memory[cp->I] = cp->V[Xreg] / 100;
+                    cp->memory[cp->I+1] = (cp->V[Xreg] / 10)%10;
+                    cp->memory[cp->I+2] = (cp->V[Xreg])%10;                    
+                    break;
+                case 0x0055:
+                    for (int i = 0; i <= Xreg; i++){
+                        cp->memory[cp->I + i] = cp->V[i];
+                    }
+                    break;
+                case 0x0065:
+                    for (int i = 0; i <= Xreg; i++){
+                        cp->V[i] = cp->memory[cp->I + i];
+                    }
+                    break;
+
+            }
+
+        default:
+            printf ("Unknown opcode\n");
+            break;
+
+    }
+}
+
+void updateTimers(Chip8* cp){
+    cp->delay_timer -= 1;
+    cp->sound_timer -= 1;
+}
+
+void nextOpCode(Chip8* cp){
+    cp->PC += 2;
+}
 
 /*
     fetch opcode

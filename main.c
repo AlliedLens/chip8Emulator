@@ -1,10 +1,10 @@
 #include "chip8.h"
 #include "debugging.h"
 #include "utils.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 
 unsigned char font[80] =
@@ -42,5 +42,12 @@ void main(int argc, char* argv[] ){
     openRom(cp, filename);
 
     printProgram(cp, 144);
-    printMultipleInstructions(cp, 20);
+    // printMultipleInstructions(cp, 20);
+    for (;;){
+        
+        emulateCycle(cp);
+        updateTimers(cp);
+        nextOpCode(cp);
+        sleep(2);
+    }
 }
