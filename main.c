@@ -8,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define REFRESH_RATE 3
+#define REFRESH_RATE 100
 
 
 unsigned char font[80] = {
@@ -60,10 +60,14 @@ void main(int argc, char* argv[] ){
             }
         }
 
-        emulateCycle(cp, app);
+        printAndEmulateCycle(cp, app);
         updateTimers(cp);
-        SDL_RenderPresent(app->renderer);
-        SDL_Delay(1000/REFRESH_RATE);    
+        if (cp->draw_flag){
+            cp->draw_flag = 0;
+            SDL_RenderPresent(app->renderer);  
+        }
+        SDL_Delay(1000/REFRESH_RATE); 
+        // cp->PC += 2;   
     }
 
     // printMultipleInstructions(cp, 50);

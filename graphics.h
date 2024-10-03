@@ -40,4 +40,16 @@ void setUpGraphics(SDLapp* app){
     SDL_SetRenderDrawColor(app->renderer, 0,0,0,255);
 }
 
+void drawPixel(SDLapp* app, char x, char y)
+{
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {	
+            SDL_RenderDrawPoint(app->renderer, (x * 8) + i , (y * 8) + j);
+        }
+    }	
+}
+
+
 #endif

@@ -88,16 +88,6 @@ void initialize(Chip8* cp, char* font, SDLapp* app){
     printf("Chip8 initialized...\n");
 } 
 
-void drawPixel(SDLapp* app, char x, char y)
-{
-    for (int i = 0; i < 8; i++)
-    {
-        for (int j = 0; j < 8; j++)
-        {	
-            SDL_RenderDrawPoint(app->renderer, (x * 8) + i , (y * 8) + j);
-        }
-    }	
-}
 void emulateCycle(Chip8* cp, SDLapp* app){
     cp->opcode = cp->memory[cp->PC] << 8 | cp->memory[cp->PC+1];
     printf("address: 0x%x opcode: 0x%x \n", cp->PC, cp->opcode);
@@ -293,6 +283,7 @@ void emulateCycle(Chip8* cp, SDLapp* app){
                 case 0x0029:
 
                     printf("---i := hex V%x \n", (cp->opcode & 0x0F00)>>8);
+                    cp->I = cp->V[Xreg] * 5;
                     break;
                 case 0x0033:
                     cp->memory[cp->I] = cp->V[Xreg] / 100;
