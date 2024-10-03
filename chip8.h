@@ -237,9 +237,11 @@ void emulateCycle(Chip8* cp, SDLapp* app){
                         if (cp->gfx[Yreg+yline][Xreg+xline]){
                             SDL_SetRenderDrawColor(app->renderer, 255,255,255, 255);
                             drawPixel(app, Xreg+xline, Yreg+yline );
+                            SDL_SetRenderDrawColor(app->renderer, 0,0,0,255);
                         }else{
                             SDL_SetRenderDrawColor(app->renderer, 0,0,0,255);
                             drawPixel(app, Xreg+xline, Yreg+yline);
+                            SDL_SetRenderDrawColor(app->renderer, 0, 255,255,255);
                         }
 
                     }

@@ -14,6 +14,40 @@ void printProgram(Chip8* cp, int bytes){
     return;
 }
 
+// sprites are drawn at the location in Vx, Vy, and N is the number of bytes to be rendered,
+// N bytes are taken from the address starting with I
+
+void displaySprite(Chip8* cp){
+    printf("\n-----------\n");
+    int x = cp->V[(cp->opcode & 0x0F00) >> 8];
+    int y = cp->V[(cp->opcode & 0x00F0) >> 4];
+    int N = (cp->opcode & 0x000F);
+
+    for (int yline =0 ; yline < N; yline++){
+        char pixel = cp->memory[cp->I + yline];
+        for (int xline = 0; xline < 8; xline++){
+            if ( (pixel & (0x80 >> xline)) != 0 ){
+                printf("X");
+            }else{
+                printf(" ");
+            }
+        }
+        printf("\n");
+    }
+
+    printf("\n------------\n");
+}
+
+void printBits(unsigned int num) {
+    int bits = sizeof(num) * 8; // Get the number of bits in the integer
+    for (int i = bits - 1; i >= 0; i--) {
+        // Print each bit
+        printf("%d", (num >> i) & 1);
+    }
+    printf("\n");
+}
+
+
 void printInstruction(Chip8* cp){
     cp->opcode = cp->memory[cp->PC] << 8 | cp->memory[cp->PC+1];
     printf("address: 0x%x opcode: 0x%x: ", cp->PC, cp->opcode);
@@ -104,7 +138,8 @@ void printInstruction(Chip8* cp){
             printf("V%x := random 0x%x\n", X, cp->opcode & 0x00FF);
             break;
         case 0xD000:
-            printf("sprite V%x V%x %x\n", X, (cp->opcode & 0x00F0)>>4, cp->opcode & 0x000F);
+            printf("sprite (%x, %x) Bytes: %x\n", cp->memory[X], cp->memory[(cp->opcode & 0x00F0)>>4], cp->opcode & 0x000F);
+            //displaySprite(cp);
             break;
         case 0xE000:
             switch(ef_operation){
@@ -188,6 +223,7 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
                     printf("return subroutine\n");
                     cp->stack_pointer--;
                     cp->PC = cp->call_stack[cp->stack_pointer];
+                    cp->PC += 2;
                     break;
             }
             break;
@@ -202,7 +238,7 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
             cp->PC = NNN;
             break;
         case 0x3000: // Skip next instruction if Vx == NN
-            printf("if V%x == %x then\n", Xreg, NN);
+            printf("if V%x != %x then\n", Xreg, NN);
             if (cp->V[Xreg] == NN) {
                 cp->PC += 4;
             } else {
@@ -210,7 +246,7 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
             }
             break;
         case 0x4000: // Skip next instruction if Vx != NN
-            printf("if V%x != %x then\n", Xreg, NN);
+            printf("if V%x == %x then\n", Xreg, NN);
             if (cp->V[Xreg] != NN) {
                 cp->PC += 4;
             } else {
@@ -218,7 +254,7 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
             }
             break;
         case 0x5000: // Skip next instruction if Vx == Vy
-            printf("if V%x == V%x then\n", Xreg, Yreg);
+            printf("if V%x != V%x then\n", Xreg, Yreg);
             if (cp->V[Xreg] == cp->V[Yreg]) {
                 cp->PC += 4;
             } else {
@@ -308,6 +344,7 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
             break;
         case 0xD000: // Draw sprite at (Vx, Vy)
             printf("sprite %x %x %x\n", cp->V[Xreg], cp->V[Yreg], N);
+            // displaySprite(cp);
             cp->V[0xF] = 0;
             for (int yline = 0; yline < N; yline++) {
                 pixel = cp->memory[cp->I + yline];
@@ -321,7 +358,7 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
                             drawPixel(app, cp->V[Xreg]+xline, cp->V[Yreg]+yline );
                         }else{
                             SDL_SetRenderDrawColor(app->renderer, 0,0,0,255);
-                            drawPixel(app, Xreg+xline, Yreg+yline);
+                            drawPixel(app, cp->V[Xreg]+xline, cp->V[Yreg]+yline );
                         }
 
                     }
@@ -400,6 +437,7 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
     }
 }
 
+
 void printMultipleInstructions(Chip8* cp, int count){
     printf("\n===========Instructions==========\n");
     for (int i = cp->PC; i < 0x0200+count*2; i=i+2){
@@ -410,33 +448,8 @@ void printMultipleInstructions(Chip8* cp, int count){
 }
 
 
+
 void debug1NNN(Chip8* cp){
     // printf("");
 }
 
-/*
-IBM render
-
-address: 0x200 opcode: 0xe0: clear screen
-address: 0x202 opcode: 0xa22a: I := 0x22a
-address: 0x204 opcode: 0x600c: V0 := c
-address: 0x206 opcode: 0x6108: V1 := 8
-address: 0x208 opcode: 0xd01f: sprite V0 V1 f
-address: 0x20a opcode: 0x7009: V0 += 9
-address: 0x20c opcode: 0xa239: I := 0x239
-address: 0x20e opcode: 0xd01f: sprite V0 V1 f
-address: 0x210 opcode: 0xa248: I := 0x248
-address: 0x212 opcode: 0x7008: V0 += 8
-address: 0x214 opcode: 0xd01f: sprite V0 V1 f
-address: 0x216 opcode: 0x7004: V0 += 4
-address: 0x218 opcode: 0xa257: I := 0x257
-address: 0x21a opcode: 0xd01f: sprite V0 V1 f
-address: 0x21c opcode: 0x7008: V0 += 8
-address: 0x21e opcode: 0xa266: I := 0x266
-address: 0x220 opcode: 0xd01f: sprite V0 V1 f
-address: 0x222 opcode: 0x7008: V0 += 8
-address: 0x224 opcode: 0xa275: I := 0x275
-address: 0x226 opcode: 0xd01f: sprite V0 V1 f
-address: 0x228 opcode: 0x1228: jump 0x228 
-
-*/
