@@ -18,19 +18,19 @@ Beginner to emulating tries his hand at building one of the most basic emulator/
 
 ### Chip8Emulator 
 #### --Roms
-        Contains all of the roms needed to load the program
+Contains all of the roms needed to load the program
 #### blueprint.txt
-        Had the structure needed to for setup of the code
+Had the structure needed to for setup of the code
 #### chip8.h
-        Has the basic structure of the chip8, as well as all of the useful commands needed for operations
+Has the basic structure of the chip8, as well as all of the useful commands needed for operations
 #### debugging.h
-        Contained a bunch of code filled with printf statements and what have you.
+Contained a bunch of code filled with printf statements and what have you.
 #### graphics.h
-        Contains Functions useful to rendering graphics
+Contains Functions useful to rendering graphics
 #### main.c
-        Where the magic happens
+Where the magic happens
 #### utils.h
-        Wish i used this more, was supposed to have all the functions that i was using for something else.
+Wish I used this more, was supposed to have all the functions that i was using for something else.
 
 ## Resources
 
