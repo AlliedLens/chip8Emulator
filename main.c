@@ -8,10 +8,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#define REFRESH_RATE 20
+#define REFRESH_RATE 700
 
 
-unsigned char font[80] = {
+unsigned char font[80] =
+{
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
     0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -29,6 +30,7 @@ unsigned char font[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
+
 
 void main(int argc, char* argv[] ){
     unsigned char filename[100];
@@ -50,14 +52,12 @@ void main(int argc, char* argv[] ){
 
     int quit = 0;
 
-    SDL_Event e;
+    SDL_Event event;
 
     while (!quit){
 
-        while (SDL_PollEvent(&e) != 0){
-            if (e.type == SDL_QUIT){
-                quit = 1;
-            }
+        while (SDL_PollEvent(&event) != 0){
+            setKeys(cp, &event, &quit);
         }
 
         printAndEmulateCycle(cp, app);
@@ -99,5 +99,45 @@ address: 0x222 opcode: 0x7008: V0 += 8
 address: 0x224 opcode: 0xa275: I := 0x275
 address: 0x226 opcode: 0xd01f: sprite V0 V1 f
 address: 0x228 opcode: 0x1228: jump 0x228 
+
+*/
+
+/*
+Release: Scancode: 0x27, Name: 0
+Release: Scancode: 0x1E, Name: 1
+Release: Scancode: 0x1F, Name: 2
+Release: Scancode: 0x20, Name: 3
+Release: Scancode: 0x21, Name: 4
+Release: Scancode: 0x22, Name: 5
+Release: Scancode: 0x23, Name: 6
+Release: Scancode: 0x24, Name: 7
+Release: Scancode: 0x25, Name: 8
+Release: Scancode: 0x26, Name: 9
+Release: Scancode: 0x04, Name: A
+Release: Scancode: 0x05, Name: B
+Release: Scancode: 0x06, Name: C
+Release: Scancode: 0x07, Name: D
+Release: Scancode: 0x08, Name: E
+Release: Scancode: 0x09, Name: F
+
+Maps To
+
+Release: Scancode: 0x1E, Name: 1
+Release: Scancode: 0x1F, Name: 2
+Release: Scancode: 0x20, Name: 3
+Release: Scancode: 0x21, Name: 4
+Release: Scancode: 0x14, Name: Q
+Release: Scancode: 0x1A, Name: W
+Release: Scancode: 0x08, Name: E
+Release: Scancode: 0x15, Name: R
+Release: Scancode: 0x04, Name: A
+Release: Scancode: 0x16, Name: S
+Release: Scancode: 0x07, Name: D
+Release: Scancode: 0x09, Name: F
+Release: Scancode: 0x1D, Name: Z
+Release: Scancode: 0x1B, Name: X
+Release: Scancode: 0x06, Name: C
+Release: Scancode: 0x19, Name: V
+
 
 */

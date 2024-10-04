@@ -48,6 +48,7 @@ void printBits(unsigned int num) {
 }
 
 
+
 void printInstruction(Chip8* cp){
     cp->opcode = cp->memory[cp->PC] << 8 | cp->memory[cp->PC+1];
     printf("address: 0x%x opcode: 0x%x: ", cp->PC, cp->opcode);
@@ -207,6 +208,8 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
     short N = cp->opcode & 0x000F;
     short NN = cp->opcode & 0x00FF;
     short NNN = cp->opcode & 0x0FFF;
+
+    Uint8* keyboard;
 
     char pixel;
 
@@ -369,12 +372,28 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
             break;
         case 0xE000:
             switch(ef_operation) {
-                case 0x009E: // Skip next instruction if key with value Vx is pressed
-                    printf("if V%x -key then\n", Xreg);
+                case 0x009E: // EX9E: Skip if key
+                    keyboard = (Uint8 *)SDL_GetKeyboardState(NULL);
+				
+                    if (keyboard[keymap[cp->V[Xreg]]])
+                    {
+                        cp->PC += 4;
+                    }else{
+                        cp->PC += 2;
+                    }
+			
                     break;
-                case 0x00A1: // Skip next instruction if key with value Vx is not pressed
-                    printf("if V%x key then\n", Xreg);
-                    break;
+                case 0x00A1: // EXA1: Skip if key
+                    keyboard = (Uint8 *)SDL_GetKeyboardState(NULL);		
+
+                    if (!keyboard[keymap[cp->V[Xreg]]])
+                    {
+                        cp->PC += 4;
+                    }else{
+                        cp->PC += 2;
+                    }
+
+                    break;                            
             }
             break;
         case 0xF000:
@@ -386,7 +405,16 @@ void printAndEmulateCycle(Chip8* cp, SDLapp* app) {
                     break;
                 case 0x000A: // Wait for key press, store key value in Vx
                     printf("V%x := key \n", Xreg);
-                    // TODO: Implement key wait logic
+                    keyboard = (Uint8 *)SDL_GetKeyboardState(NULL);
+
+                    for (int i = 0; i < 0x10; i++)
+                    {
+                        if (keyboard[keymap[i]])
+                        {
+                            cp->V[Xreg] = i;
+                            cp->PC += 2;
+                        }
+                    }
                     break;
                 case 0x0015: // Set delay_timer = Vx
                     printf("delay := V%x \n", Xreg);
@@ -445,11 +473,5 @@ void printMultipleInstructions(Chip8* cp, int count){
         printInstruction(cp);
     }
     printf("\n=====================================\n");
-}
-
-
-
-void debug1NNN(Chip8* cp){
-    // printf("");
 }
 
