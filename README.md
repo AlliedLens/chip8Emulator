@@ -2,7 +2,14 @@
 
 ## Description
 
+![](Chip8.gif)
+
 Beginner to emulating tries his hand at building one of the most basic emulator/interpreter, for the chip8, which is a language that used to run on devices from the 80s, using C. Oh I almost forgot, trying to do this project without any chatgpt,  ( I failed :( ).
+
+
+| ![Alt text](tetrisGame.gif) |
+|:--:|
+| *Fran Dachille made this rom of tetris for an HP405 with Chip8 in 1991, for her friends in college. Here I am, presently a college student, trying to make a program to run her code. We stand on the shoulders of giants.* |
 
 ## Usage
 
@@ -12,7 +19,7 @@ Beginner to emulating tries his hand at building one of the most basic emulator/
 ##### `./main (filepath to the rom) ` to get the rom running.
 ##### Use the text file with the corresponding rom name for instructions, keep in mind the keybindings are 
 
-![Sample Image](keypad.jpeg)
+![KeyBindings](keypad.jpeg)
 
 ## Project Structure
 
