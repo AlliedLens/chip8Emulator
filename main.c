@@ -48,7 +48,7 @@ void main(int argc, char* argv[] ){
 
     setUpGraphics(app);
 
-    printProgram(cp, 36);
+    // printProgram(cp, 36);
 
     int quit = 0;
 
@@ -60,7 +60,7 @@ void main(int argc, char* argv[] ){
             setKeys(cp, &event, &quit);
         }
 
-        printAndEmulateCycle(cp, app);
+        emulateCycle(cp, app);
         updateTimers(cp);
 
         if (cp->draw_flag){
